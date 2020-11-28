@@ -34,16 +34,14 @@ Keypad keypad = Keypad(makeKeymap(keys), rowPins, colPins, ROWS, COLS);
 const int rs = 34, en = 32, d4 = 28, d5 = 26, d6 = 24, d7 = 22;
 LiquidCrystal lcd(rs, en, d4, d5, d6, d7);
 
-enum PixelState
-{
+enum PixelState {
   Low,
   Brightening,
   Dimming,
   High
 };
 
-struct PixelInfo
-{
+struct PixelInfo {
   PixelState state;
   int twinkleness;
   int brightness;
@@ -52,10 +50,8 @@ struct PixelInfo
 
 PixelInfo pi[NUM_LEDS];
 
-void initLeds()
-{
-  for (int i = 0; i < NUM_LEDS; i++)
-  {
+void initLeds() {
+  for (int i = 0; i < NUM_LEDS; i++) {
     leds[i] = BASE_COLOR;
     pi[i].state = Low;
     pi[i].twinkleness = 0;
@@ -64,147 +60,123 @@ void initLeds()
   }
 }
 
-void brighten(int i)
-{
-
-  if (pi[i].brightness < pi[i].twinkleness)
-  {
+void brighten(int i) {
+  if (pi[i].brightness < pi[i].twinkleness) {
     pi[i].brightness += pi[i].twinkleRate;
     if (pi[i].brightness > pi[i].twinkleness)
       pi[i].brightness = pi[i].twinkleness;
     leds[i] = CHSV(HUE, SAT, pi[i].brightness);
-  }
-  else
-  {
+  } else {
     pi[i].brightness = pi[i].twinkleness;
     leds[i] = CHSV(HUE, SAT, pi[i].brightness);
     pi[i].state = High;
   }
 }
 
-void dim(int i)
-{
-
-  if (pi[i].brightness > BRIGHTNESS_FLOOR)
-  {
+void dim(int i) {
+  if (pi[i].brightness > BRIGHTNESS_FLOOR) {
     pi[i].brightness -= pi[i].twinkleRate;
     if (pi[i].brightness < BRIGHTNESS_FLOOR)
       pi[i].brightness = BRIGHTNESS_FLOOR;
     leds[i] = CHSV(HUE, SAT, pi[i].brightness);
-  }
-  else
-  {
+  } else {
     pi[i].brightness = BRIGHTNESS_FLOOR;
     leds[i] = CHSV(HUE, SAT, pi[i].brightness);
     pi[i].state = Low;
   }
 }
 
-void twinkle()
-{
+void twinkle() {
   int index = rand() % NUM_LEDS;
-  if (pi[index].state == Low)
-  {
+  if (pi[index].state == Low) {
     pi[index].state = Brightening;
     pi[index].twinkleness = (rand() % (BRIGHTNESS_CEILING - BRIGHTNESS_FLOOR - 15)) + BRIGHTNESS_FLOOR + 15;
     pi[index].twinkleRate = (rand() % 5) + 1;
-  }
-  else if (pi[index].state == High)
-  {
+  } else if (pi[index].state == High) {
     pi[index].state = Dimming;
   }
 
-  for (int i = 0; i < NUM_LEDS; i++)
-  {
-    switch (pi[i].state)
-    {
-    case Low:
-      pi[i].brightness = BRIGHTNESS_FLOOR;
-      leds[i] = CHSV(HUE, SAT, pi[i].brightness);
-      break;
-    case High:
-      if (pi[i].twinkleness > BRIGHTNESS_CEILING)
-      {
-        pi[i].twinkleness = BRIGHTNESS_CEILING;
-        pi[i].brightness = BRIGHTNESS_CEILING;
-      }
-      leds[i] = CHSV(HUE, SAT, pi[i].brightness);
-      break;
-    case Brightening:
-      if (pi[i].twinkleness > BRIGHTNESS_CEILING)
-      {
-        pi[i].twinkleness = BRIGHTNESS_CEILING;
-      }
-      brighten(i);
-      break;
-    case Dimming:
-      dim(i);
-      break;
-    default:
-      break;
+  for (int i = 0; i < NUM_LEDS; i++) {
+    switch (pi[i].state) {
+      case Low:
+        pi[i].brightness = BRIGHTNESS_FLOOR;
+        leds[i] = CHSV(HUE, SAT, pi[i].brightness);
+        break;
+      case High:
+        if (pi[i].twinkleness > BRIGHTNESS_CEILING) {
+          pi[i].twinkleness = BRIGHTNESS_CEILING;
+          pi[i].brightness = BRIGHTNESS_CEILING;
+        }
+        leds[i] = CHSV(HUE, SAT, pi[i].brightness);
+        break;
+      case Brightening:
+        if (pi[i].twinkleness > BRIGHTNESS_CEILING) {
+          pi[i].twinkleness = BRIGHTNESS_CEILING;
+        }
+        brighten(i);
+        break;
+      case Dimming:
+        dim(i);
+        break;
+      default:
+        break;
     }
   }
   FastLED.show();
   FastLED.delay(1000 / FRAMES_PER_SECOND);
 }
 
-void clearRow()
-{
+void clearRow() {
   lcd.setCursor(0, 1);
   lcd.print("                ");
   lcd.setCursor(0, 1);
 }
 
-int getNum()
-{
+int getNum() {
   lcd.setCursor(0, 1);
   int num = 0;
   char key1 = keypad.getKey();
-  while (key1 != '#')
-  {
-    switch (key1)
-    {
-    case NO_KEY:
-      break;
+  while (key1 != '#') {
+    switch (key1) {
+      case NO_KEY:
+        break;
 
-    case '0':
-    case '1':
-    case '2':
-    case '3':
-    case '4':
-    case '5':
-    case '6':
-    case '7':
-    case '8':
-    case '9':
-      lcd.print(key1);
-      num = num * 10 + (key1 - '0');
-      if (num > 255)
-      {
+      case '0':
+      case '1':
+      case '2':
+      case '3':
+      case '4':
+      case '5':
+      case '6':
+      case '7':
+      case '8':
+      case '9':
+        lcd.print(key1);
+        num = num * 10 + (key1 - '0');
+        if (num > 255) {
+          num = 0;
+          clearRow();
+        }
+        break;
+
+      case '#':
+        return num;
+        break;
+
+      case '*':
         num = 0;
         clearRow();
-      }
-      break;
+        break;
 
-    case '#':
-      return num;
-      break;
-
-    case '*':
-      num = 0;
-      clearRow();
-      break;
-
-    default:
-      break;
+      default:
+        break;
     }
     key1 = keypad.getKey();
   }
   return num;
 }
 
-void setHue()
-{
+void setHue() {
   lcd.clear();
   lcd.print("Hue:");
   HUE = getNum();
@@ -213,8 +185,7 @@ void setHue()
   lcd.clear();
 }
 
-void setSat()
-{
+void setSat() {
   lcd.clear();
   lcd.print("Saturation:");
   SAT = getNum();
@@ -223,8 +194,7 @@ void setSat()
   lcd.clear();
 }
 
-void setLowBright()
-{
+void setLowBright() {
   lcd.clear();
   lcd.print("Brightness Low:");
   BRIGHTNESS_FLOOR = getNum();
@@ -233,8 +203,7 @@ void setLowBright()
   lcd.clear();
 }
 
-void setHighBright()
-{
+void setHighBright() {
   lcd.clear();
   lcd.print("Brightness High:");
   BRIGHTNESS_CEILING = getNum();
@@ -243,36 +212,32 @@ void setHighBright()
   lcd.clear();
 }
 
-void getInput()
-{
+void getInput() {
   char key = keypad.getKey();
-  if (key)
-  {
-    switch (key)
-    {
-    case 'A':
-      setHue();
-      break;
-    case 'B':
-      setSat();
-      break;
-    case 'C':
+  if (key) {
+    switch (key) {
+      case 'A':
+        setHue();
+        break;
+      case 'B':
+        setSat();
+        break;
+      case 'C':
 
-      setLowBright();
-      break;
-    case 'D':
-      setHighBright();
-      break;
-    default:
-      lcd.clear();
-      lcd.print("Select A B C D");
-      break;
+        setLowBright();
+        break;
+      case 'D':
+        setHighBright();
+        break;
+      default:
+        lcd.clear();
+        lcd.print("Select A B C D");
+        break;
     }
   }
 }
 
-void setup()
-{
+void setup() {
   lcd.begin(16, 2);
   Serial.begin(9600);
   delay(3000);
@@ -280,8 +245,7 @@ void setup()
   initLeds();
 }
 
-void loop()
-{
+void loop() {
   getInput();
   twinkle();
 }
